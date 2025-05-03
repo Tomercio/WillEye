@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 sys.path.insert(0, os.path.dirname(__file__))
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ASCII art banner
 BANNER = r"""
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                                 WillEye                                 │
@@ -36,10 +38,37 @@ STEPS = [
     "Remediation & Retest",  # 13
     "Reporting"  # 14
 ]
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def show_welcome():
+    clear_screen()
+    print("Welcome to WillEye!\n")
+    print("An interactive penetration testing framework — walk through each phase")
+    print("from reconnaissance to remediation in a single CLI.\n")
+    print("Before you begin, make sure you have these tools installed and in your PATH:")
+    tools = [
+        "whois",           # WHOIS lookups
+        "dig",             # DNS queries
+        "subfinder",       # Subdomain discovery
+        "nmap",            # Port & service scanning
+        "searchsploit",    # Vulnerability database search
+        "msfconsole",      # Metasploit for exploitation
+        "zap-baseline.py",  # OWASP ZAP for webapp baseline
+        "gobuster",        # Directory brute-force
+        "hydra",           # Credential brute-force
+        "linpeas.sh",      # Linux privilege escalation checks
+        "airodump-ng",     # Wireless enumeration
+        "bettercap",       # MITM attacks
+        "ffuf"             # API/cloud fuzzing
+    ]
+    for t in tools:
+        print(f"  • {t}")
+    input("\nPress Enter to continue to the main menu…")
 
 
 def print_ui(statuses):
@@ -80,7 +109,8 @@ def step_target(engine, stats):
 def step_info(engine, stats):
     if not engine.target:
         print("⚠️  Set a target first (step 1).")
-        return pause()
+        pause()
+        return
     print("→ WHOIS lookup:")
     print(engine.run_whois())
     print("\n→ DNS enumeration:")
@@ -94,11 +124,10 @@ def step_info(engine, stats):
 def step_scan(engine, stats):
     if not engine.target:
         print("⚠️  Set a target first (step 1).")
-        return pause()
-    # Let user choose scan flags
+        pause()
+        return
     nmap_flags = input(
-        "Enter Nmap flags (e.g. -sS -sV -Pn) [default -sS]: "
-    ).strip() or "-sS"
+        "Enter Nmap flags (e.g. -sS -sV -Pn) [default -sS]: ").strip() or "-sS"
     ports = input("Enter port range [default 1-1024]: ").strip() or "1-1024"
     print(f"→ Running nmap {nmap_flags} -p {ports} {engine.target}\n")
     print(engine.run_nmap(nmap_flags, ports))
@@ -193,17 +222,21 @@ def step_report(engine, stats):
 
 
 ACTIONS = {
-    "1": step_target,    "2": step_info,    "3": step_scan,
-    "4": step_service,   "5": step_vuln,    "6": step_exploit,
-    "7": step_webapp,    "8": step_bruteforce, "9": step_postex,
-    "10": step_privesc,  "11": step_wireless, "12": step_apicloud,
-    "13": step_remed,    "14": step_report
+    "1": step_target,     "2": step_info,     "3": step_scan,
+    "4": step_service,    "5": step_vuln,     "6": step_exploit,
+    "7": step_webapp,     "8": step_bruteforce, "9": step_postex,
+    "10": step_privesc,   "11": step_wireless, "12": step_apicloud,
+    "13": step_remed,     "14": step_report
 }
 
 
 def main():
+    # show welcome only once
+    show_welcome()
+
     engine = Engine()
     statuses = ["Pending"] * len(STEPS)
+
     while True:
         print_ui(statuses)
         choice = input("Select an option: ").strip()
