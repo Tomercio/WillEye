@@ -39,6 +39,7 @@ RESOURCE_STEPS = [
     "SearchSploit Lookup",  # 11
     "SQL Injection Testing",  # 12
     "XSS Testing"  # 13
+    "Pentest Commands"  # 14
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -50,17 +51,43 @@ def clear_screen():
 def show_welcome():
     clear_screen()
     print("Welcome to WillEye!\n")
-    print("An interactive penetration testing framework — walk through each phase")
-    print("from reconnaissance to remediation in a single CLI.\n")
-    print("Make sure these external tools are installed and in your PATH:")
-    tools = [
-        "whois", "dig", "subfinder", "nmap", "searchsploit",
-        "msfconsole", "zap-baseline.py", "gobuster", "hydra",
-        "linpeas.sh", "airodump-ng", "bettercap", "ffuf",
-        "sqlmap", "xsstrike"
+    print("An interactive penetration-testing framework — walk through each phase")
+    print("from reconnaissance to reporting in a single CLI.\n")
+
+    # ───────────── System-wide tools (APT / Pacman / etc.) ─────────────
+    system_tools = [
+        "whois", "dig (dnsutils)", "subfinder",
+        "nmap", "metasploit-framework (msfconsole)",
+        "searchsploit / exploitdb",
+        "zap-baseline.py  (from OWASP ZAP)",
+        "gobuster", "hydra  +  sshpass",
+        "linpeas.sh", "airodump-ng", "bettercap",
+        "ffuf", "docker.io"
     ]
-    for t in tools:
-        print(f"  • {t}")
+
+    # ───────────── Python packages (install *inside* venv) ─────────────
+    venv_packages = [
+        "python-nmap", "requests", "paramiko",
+        "pywinrm", "colorama", "tabulate"
+    ]
+
+    print("Install these **system tools** (outside the venv):")
+    for tool in system_tools:
+        print(f"  • {tool}")
+
+    print("\nInstall these **Python packages** *inside* your venv:")
+    for pkg in venv_packages:
+        print(f"  • {pkg}")
+
+    # ───────────── Example one-liner commands ─────────────
+    print("\nQuick-install snippets:")
+    print("# Outside the venv")
+    print("sudo apt update && \\")
+    print("sudo apt install -y whois dnsutils subfinder nmap metasploit-framework \\")
+    print("    exploitdb zaproxy gobuster hydra sshpass bettercap aircrack-ng ffuf docker.io")
+    print("\n# Inside an activated venv")
+    print("pip install python-nmap requests paramiko pywinrm colorama tabulate")
+
     input("\nPress Enter to continue…")
 
 
@@ -260,6 +287,54 @@ def step_privesc(engine, stats):
     except Exception as e:
         print(f"✗ PrivEsc error: {e}")
     pause()
+# ─────────────────────────────────────────────────────────────────────────────
+#  Resource handler: Pentest Commands cheat-sheet
+
+
+def step_commands(engine, _):
+    CHEATSHEET = {
+        "Reconnaissance": [
+            "whois <domain>",
+            "dig <domain> ANY +nocmd +answer",
+            "subfinder -d <domain> -o subs.txt"
+        ],
+        "Port Scanning": [
+            "nmap -sS -p- -T4 <target>",
+            "nmap -sC -sV -oA nmap/full <target>"
+        ],
+        "Service Enumeration": [
+            "enum4linux -a <target>            # SMB",
+            "smtp-user-enum -M VRFY -U users.txt -t <target>",
+            "ike-scan -M <target>"
+        ],
+        "Web Application": [
+            "gobuster dir -u https://<host>/ -w common.txt -t 50",
+            "nikto -host https://<host>/",
+            "zap-baseline.py -t https://<host>/ -r zap.html"
+        ],
+        "Vulnerability Search": [
+            "searchsploit <software version>",
+            "nuclei -u https://<host>/ -t cves/"
+        ],
+        "Exploitation": [
+            "msfconsole -q -x 'use exploit/windows/smb/ms17_010_eternalblue; set RHOSTS <target>; run'",
+            "sqlmap -u 'https://<host>/item.php?id=1' --dbs"
+        ],
+        "Post-Exploitation": [
+            "linpeas.sh                                  # Linux",
+            "winPEAS.exe                                 # Windows",
+            "bloodhound-python -c All -u <user>@<dc>"
+        ]
+    }
+
+    print("\n====================  Pentest Commands Cheat-Sheet  ====================\n")
+    for category, cmds in CHEATSHEET.items():
+        print(f"[{category}]")
+        for cmd in cmds:
+            print(f"  {cmd}")
+        print()  # blank line between categories
+    pause()
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 def step_wireless(engine, stats):
@@ -344,6 +419,7 @@ ACTIONS = {
     "11": step_searchsploit,
     "12": step_sqlmap,
     "13": step_xss,
+    "14": step_commands,
 }
 
 
