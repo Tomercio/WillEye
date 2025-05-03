@@ -38,7 +38,7 @@ WORKFLOW_STEPS = [
 RESOURCE_STEPS = [
     "SearchSploit Lookup",  # 11
     "SQL Injection Testing",  # 12
-    "XSS Testing"  # 13
+    "XSS Testing",  # 13
     "Pentest Commands"  # 14
 ]
 # ─────────────────────────────────────────────────────────────────────────────
