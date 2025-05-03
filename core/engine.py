@@ -1,9 +1,9 @@
-# core/engine.py
 import socket
 
 from core.adapters import (
     whois_adapter,
-    dns_adapter,
+    dig,
+    subdomains,
     nmap_adapter,
     searchsploit_adapter,
     metasploit_adapter,
@@ -29,51 +29,51 @@ class Engine:
         if not self.target:
             raise RuntimeError("Target not set. Complete step 1 first.")
 
-    def run_whois(self):
+    def run_whois(self) -> str:
         self._ensure_target()
-        out = whois_adapter.lookup(self.target)
+        out = whois_adapter(self.target)
         self.history['whois'] = out
         return out
 
-    def run_dns_enum(self):
+    def run_dns_enum(self) -> str:
         self._ensure_target()
-        out = dns_adapter.dig(self.target)
+        out = dig(self.target)
         self.history['dns'] = out
         return out
 
-    def run_subdomains(self):
+    def run_subdomains(self) -> str:
         self._ensure_target()
-        out = dns_adapter.subdomains(self.target)
+        out = subdomains(self.target)
         self.history['subdomains'] = out
         return out
 
-    def run_nmap(self, flags: str, ports: str):
+    def run_nmap(self, flags: str, ports: str) -> str:
         self._ensure_target()
-        out = nmap_adapter.scan(self.target, flags, ports)
+        out = nmap_adapter(self.target, flags, ports)
         self.history['nmap'] = out
         return out
 
-    def run_service_enum(self):
+    def run_service_enum(self) -> str:
         self._ensure_target()
         flags = "-sV -sC"
         ports = "1-65535"
-        out = nmap_adapter.scan(self.target, flags, ports)
+        out = nmap_adapter(self.target, flags, ports)
         self.history['service_enum'] = out
         return out
 
-    def run_searchsploit(self, term: str):
-        out = searchsploit_adapter.search(term)
+    def run_searchsploit(self, term: str) -> str:
+        out = searchsploit_adapter(term)
         self.history.setdefault('vuln', "")
         self.history['vuln'] += out + "\n"
         return out
 
-    def run_exploit(self, module: str):
+    def run_exploit(self, module: str) -> str:
         self._ensure_target()
-        out = metasploit_adapter.exploit(self.target, module)
+        out = metasploit_adapter(self.target, module)
         self.history['exploit'] = out
         return out
 
-    def run_webapp_tests(self):
+    def run_webapp_tests(self) -> str:
         self._ensure_target()
         o1 = zap_baseline(self.target)
         o2 = dir_bruteforce(self.target)
@@ -81,47 +81,47 @@ class Engine:
         self.history['webapp'] = combined
         return combined
 
-    def run_bruteforce(self, user: str, pwlist: str):
+    def run_bruteforce(self, user: str, pwlist: str) -> str:
         self._ensure_target()
         out = ssh_bruteforce(self.target, user, pwlist)
         self.history['bruteforce'] = out
         return out
 
-    def run_post_exploit(self):
+    def run_post_exploit(self) -> str:
         self._ensure_target()
         out = notionally_post_exploit(self.target)
         self.history['post_exploit'] = out
         return out
 
-    def run_priv_esc(self):
+    def run_priv_esc(self) -> str:
         self._ensure_target()
         out = run_linpeas()
         self.history['priv_esc'] = out
         return out
 
-    def run_wireless(self):
+    def run_wireless(self) -> str:
         out = wireless_tests()
         self.history['wireless'] = out
         return out
 
-    def run_api_cloud(self):
+    def run_api_cloud(self) -> str:
         self._ensure_target()
         out = api_fuzz(self.target)
         self.history['api_cloud'] = out
         return out
 
-    def run_remediation(self):
+    def run_remediation(self) -> str:
         out = remediation_guide(self.history)
         self.history['remediation'] = out
         return out
 
-    def run_sqlmap(self, url: str, param: str = None, level: int = 1, risk: int = 1):
+    def run_sqlmap(self, url: str, param: str = None, level: int = 1, risk: int = 1) -> str:
         self._ensure_target()
         out = sqlmap_scan(url, param, level, risk)
         self.history['sqlmap'] = out
         return out
 
-    def run_xss(self, url: str, param: str = None):
+    def run_xss(self, url: str, param: str = None) -> str:
         self._ensure_target()
         out = xss_scan(url, param)
         self.history['xss'] = out

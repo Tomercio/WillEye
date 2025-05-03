@@ -1,16 +1,12 @@
-#!/usr/bin/env python3
 from core.engine import Engine
 import os
 import sys
 import socket
 from urllib.parse import urlparse
 
-# Make sure core/ is on the import path
 sys.path.insert(0, os.path.dirname(__file__))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ASCII art banner
 BANNER = r"""
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                                 WillEye                                 │
@@ -40,7 +36,6 @@ STEPS = [
     "XSS Testing",  # 15
     "Reporting"  # 16
 ]
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def clear_screen():
