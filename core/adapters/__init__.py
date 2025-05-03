@@ -1,4 +1,3 @@
-# core/adapters/__init__.py
 
 from .whois_adapter import lookup as whois_adapter
 from .dns_adapter import dig, subdomains
@@ -12,3 +11,5 @@ from .priv_esc_adapter import run_linpeas
 from .wireless_adapter import wireless_tests
 from .api_cloud_adapter import api_fuzz
 from .remediation_adapter import remediation_guide
+from .sqlmap_adapter import sqlmap_scan
+from .xss_adapter import xss_scan

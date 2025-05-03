@@ -36,7 +36,9 @@ STEPS = [
     "Wireless & MITM",  # 11
     "API/Cloud Scanning",  # 12
     "Remediation & Retest",  # 13
-    "Reporting"  # 14
+    "SQL Injection Testing",  # 14
+    "XSS Testing",  # 15
+    "Reporting"  # 16
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -52,19 +54,10 @@ def show_welcome():
     print("from reconnaissance to remediation in a single CLI.\n")
     print("Before you begin, make sure you have these tools installed and in your PATH:")
     tools = [
-        "whois",           # WHOIS lookups
-        "dig",             # DNS queries
-        "subfinder",       # Subdomain discovery
-        "nmap",            # Port & service scanning
-        "searchsploit",    # Vulnerability database search
-        "msfconsole",      # Metasploit for exploitation
-        "zap-baseline.py",  # OWASP ZAP for webapp baseline
-        "gobuster",        # Directory brute-force
-        "hydra",           # Credential brute-force
-        "linpeas.sh",      # Linux privilege escalation checks
-        "airodump-ng",     # Wireless enumeration
-        "bettercap",       # MITM attacks
-        "ffuf"             # API/cloud fuzzing
+        "whois", "dig", "subfinder", "nmap", "searchsploit",
+        "msfconsole", "zap-baseline.py", "gobuster", "hydra",
+        "linpeas.sh", "airodump-ng", "bettercap", "ffuf",
+        "sqlmap", "xsstrike"
     ]
     for t in tools:
         print(f"  • {t}")
@@ -212,21 +205,40 @@ def step_remed(engine, stats):
     pause()
 
 
+def step_sqlmap(engine, stats):
+    url = input("Enter URL for SQLi testing: ").strip()
+    param = input(" Parameter to test (e.g. id) [optional]: ").strip() or None
+    print(f"→ Running sqlmap on {url} (param={param}) …\n")
+    print(engine.run_sqlmap(url, param))
+    stats[13] = "Done"
+    pause()
+
+
+def step_xss(engine, stats):
+    url = input("Enter URL for XSS testing: ").strip()
+    param = input(" Parameter to test (e.g. q) [optional]: ").strip() or None
+    print(f"→ Running XSS scan on {url} (param={param}) …\n")
+    print(engine.run_xss(url, param))
+    stats[14] = "Done"
+    pause()
+
+
 def step_report(engine, stats):
     path = input(
         "Enter report filename [report.txt]: ").strip() or "report.txt"
     engine.write_report(path)
     print(f"✓ Report saved to {path}")
-    stats[13] = "Done"
+    stats[15] = "Done"
     pause()
 
 
 ACTIONS = {
-    "1": step_target,     "2": step_info,     "3": step_scan,
-    "4": step_service,    "5": step_vuln,     "6": step_exploit,
-    "7": step_webapp,     "8": step_bruteforce, "9": step_postex,
-    "10": step_privesc,   "11": step_wireless, "12": step_apicloud,
-    "13": step_remed,     "14": step_report
+    "1":  step_target,   "2":  step_info,     "3":  step_scan,
+    "4":  step_service,  "5":  step_vuln,     "6":  step_exploit,
+    "7":  step_webapp,   "8":  step_bruteforce, "9":  step_postex,
+    "10": step_privesc,  "11": step_wireless, "12": step_apicloud,
+    "13": step_remed,    "14": step_sqlmap,   "15": step_xss,
+    "16": step_report
 }
 
 

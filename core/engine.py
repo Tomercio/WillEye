@@ -15,6 +15,8 @@ from core.adapters import (
     wireless_tests,
     api_fuzz,
     remediation_guide,
+    sqlmap_scan,
+    xss_scan,
 )
 
 
@@ -111,6 +113,18 @@ class Engine:
     def run_remediation(self):
         out = remediation_guide(self.history)
         self.history['remediation'] = out
+        return out
+
+    def run_sqlmap(self, url: str, param: str = None, level: int = 1, risk: int = 1):
+        self._ensure_target()
+        out = sqlmap_scan(url, param, level, risk)
+        self.history['sqlmap'] = out
+        return out
+
+    def run_xss(self, url: str, param: str = None):
+        self._ensure_target()
+        out = xss_scan(url, param)
+        self.history['xss'] = out
         return out
 
     def write_report(self, filename: str):
