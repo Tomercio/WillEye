@@ -13,8 +13,6 @@ from core.adapters import (
     notionally_post_exploit,
     run_linpeas,
     wireless_tests,
-    api_fuzz,
-    remediation_guide,
     sqlmap_scan,
     xss_scan,
 )
@@ -53,14 +51,6 @@ class Engine:
         self.history['nmap'] = out
         return out
 
-    def run_service_enum(self) -> str:
-        self._ensure_target()
-        flags = "-sV -sC"
-        ports = "1-65535"
-        out = nmap_adapter(self.target, flags, ports)
-        self.history['service_enum'] = out
-        return out
-
     def run_searchsploit(self, term: str) -> str:
         out = searchsploit_adapter(term)
         self.history.setdefault('vuln', "")
@@ -93,29 +83,47 @@ class Engine:
         self.history['post_exploit'] = out
         return out
 
-    def run_priv_esc(self) -> str:
+    def run_priv_esc(
+        self,
+        user: str,
+        method: str = 'ssh',
+        keyfile: str = None,
+        password: str = None,
+        port: int = None
+    ) -> str:
         self._ensure_target()
-        out = run_linpeas()
+        out = run_linpeas(
+            target=self.target,
+            user=user,
+            method=method,
+            keyfile=keyfile,
+            password=password,
+            port=port
+        )
         self.history['priv_esc'] = out
         return out
 
-    def run_wireless(self) -> str:
-        out = wireless_tests()
+    def run_wireless(
+        self,
+        gateway: str,
+        iface: str = "wlan0",
+        duration: int = 30
+    ) -> str:
+        """
+        Perform MITM against self.target via the given gateway/interface for duration seconds.
+        """
+        self._ensure_target()
+        out = wireless_tests(self.target, gateway, iface, duration)
         self.history['wireless'] = out
         return out
 
-    def run_api_cloud(self) -> str:
-        self._ensure_target()
-        out = api_fuzz(self.target)
-        self.history['api_cloud'] = out
-        return out
-
-    def run_remediation(self) -> str:
-        out = remediation_guide(self.history)
-        self.history['remediation'] = out
-        return out
-
-    def run_sqlmap(self, url: str, param: str = None, level: int = 1, risk: int = 1) -> str:
+    def run_sqlmap(
+        self,
+        url: str,
+        param: str = None,
+        level: int = 1,
+        risk: int = 1
+    ) -> str:
         self._ensure_target()
         out = sqlmap_scan(url, param, level, risk)
         self.history['sqlmap'] = out
