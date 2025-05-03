@@ -5,37 +5,36 @@ import sys
 import socket
 from urllib.parse import urlparse
 
-# ensure the script’s own folder is on sys.path so core/ is importable
+# Make sure core/ is on the import path
 sys.path.insert(0, os.path.dirname(__file__))
 
 
-# ASCII art banner
 BANNER = r"""
-┌───────────────────────────────────────────────────────────────────────┐
-│                               Will Eye
-└───────────────────────────────────────────────────────────────────────┘
-   ____            _             _    _____       _ _     _           
-  |  _ \ ___  __ _| |_ ___  _ __| |_ | ____|_ __ (_) | __| | ___ _ __ 
-  | |_) / _ \/ _` | __/ _ \| '__| __||  _| | '_ \| | |/ _` |/ _ \ '__|
-  |  __/  __/ (_| | || (_) | |  | |_ | |___| | | | | | (_| |  __/ |   
-  |_|   \___|\__,_|\__\___/|_|   \__||_____|_| |_|_|_|\__,_|\___|_|   
-
-                          Learn ethical hacking step by step
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                 WillEye                                 │
+└───────────────────────────────────────────────────────────────────────────┘
 """
 
 WARNING = (
-    "WARNING: This tool is for educational purposes only. Always ensure you have proper\n"
-    "authorization before testing any system or network. Unauthorized testing is illegal."
+    "WARNING: Educational use only. Obtain authorization before testing any system.\n"
+    "Unauthorized testing is illegal."
 )
 
 STEPS = [
-    "Target Setup",
-    "Information Gathering",
-    "Port Scanning",
-    "Service Enumeration",
-    "Vulnerability Detection",
-    "Exploitation",
-    "Reporting"
+    "Target Setup",  # 1
+    "Information Gathering",  # 2
+    "Port Scanning",  # 3
+    "Service Enumeration",  # 4
+    "Vulnerability Detection",  # 5
+    "Exploitation",  # 6
+    "Web App Testing",  # 7
+    "Brute-Force & Credentials",  # 8
+    "Post-Exploitation",  # 9
+    "Privilege Escalation",  # 10
+    "Wireless & MITM",  # 11
+    "API/Cloud Scanning",  # 12
+    "Remediation & Retest",  # 13
+    "Reporting"  # 14
 ]
 
 
@@ -46,148 +45,176 @@ def clear_screen():
 def print_ui(statuses):
     clear_screen()
     print(BANNER)
-    print("\n" + WARNING + "\n")
-    # table header
-    print(f"{' Penetration Testing Workflow ':─^65}")
-    print(f"| {'Step':<30} | {'Status':<10} |")
-    print(f"{'-'*3}+{'-'*32}+{'-'*12}")
+    print(WARNING + "\n")
+    # Header
+    print(f"{' PenTest Workflow ':─^75}")
+    print(f"| {'Step':<30} | {'Status':<12} |")
+    print(f"{'-'*3}+{'-'*32}+{'-'*14}")
     for step, stat in zip(STEPS, statuses):
-        print(f"| {step:<30} | {stat:<10} |")
-    print(f"{'-'*3}+{'-'*32}+{'-'*12}\n")
-    # menu
-    print("Menu Options:")
+        print(f"| {step:<30} | {stat:<12} |")
+    print(f"{'-'*3}+{'-'*32}+{'-'*14}\n")
+    # Menu
     for i, step in enumerate(STEPS, 1):
         print(f"  {i}. {step}")
     print("  0. Exit\n")
 
 
 def pause():
-    input("\nPress Enter to continue...")
+    input("Press Enter to continue...")
 
 
-def step_target(engine, statuses):
-    raw = input("Enter domain or IP (you can include https://): ").strip()
-    # allow full URLs or bare hostnames
-    parsed = urlparse(raw if "://" in raw else "//" + raw)
+def step_target(engine, stats):
+    raw = input("Enter domain or IP: ").strip()
+    parsed = urlparse(raw if "://" in raw else "//"+raw)
     host = parsed.netloc or parsed.path
-
     try:
-        resolved = socket.gethostbyname(host)
+        ip = socket.gethostbyname(host)
+        engine.target = host
+        print(f"✓ Target set to {host} ({ip})")
+        stats[0] = "Done"
     except Exception as e:
-        print(f"✗ Could not resolve {host}: {e}")
-        pause()
-        return
-
-    engine.target = host
-    print(f"✓ Target set to {host} ({resolved})")
-    statuses[0] = "Done"
+        print(f"✗ Could not resolve target: {e}")
     pause()
 
 
-def step_info(engine, statuses):
+def step_info(engine, stats):
     if not engine.target:
-        print("⚠️  Please set the target first (option 1).")
-        pause()
-        return
-
+        print("⚠️  Set a target first (step 1).")
+        return pause()
     print("→ WHOIS lookup:")
-    try:
-        out = engine.run_whois()
-        print(out)
-    except Exception as e:
-        print(f"Error: {e}")
-
+    print(engine.run_whois())
     print("\n→ DNS enumeration:")
-    try:
-        out = engine.run_dns_enum()
-        print(out)
-    except Exception as e:
-        print(f"Error: {e}")
-
+    print(engine.run_dns_enum())
     print("\n→ Subdomain discovery:")
-    try:
-        out = engine.run_subdomains()
-        print(out)
-    except Exception as e:
-        print(f"Error: {e}")
-
-    statuses[1] = "Done"
+    print(engine.run_subdomains())
+    stats[1] = "Done"
     pause()
 
 
-def step_scan(engine, statuses):
+def step_scan(engine, stats):
     if not engine.target:
-        print("⚠️  Please set the target first (option 1).")
-        pause()
-        return
+        print("⚠️  Set a target first (step 1).")
+        return pause()
+    # Let user choose scan flags
+    nmap_flags = input(
+        "Enter Nmap flags (e.g. -sS -sV -Pn) [default -sS]: "
+    ).strip() or "-sS"
+    ports = input("Enter port range [default 1-1024]: ").strip() or "1-1024"
+    print(f"→ Running nmap {nmap_flags} -p {ports} {engine.target}\n")
+    print(engine.run_nmap(nmap_flags, ports))
+    stats[2] = "Done"
+    pause()
 
-    stype = input("Scan type   (e.g. -sS): ").strip() or "-sS"
-    ports = input("Port range  (e.g. 1-1024): ").strip() or "1-1024"
-    print(f"\n→ Running nmap {stype} -p {ports} {engine.target} …\n")
+
+def step_service(engine, stats):
+    print("→ Service Enumeration (-sV -sC):")
+    print(engine.run_service_enum())
+    stats[3] = "Done"
+    pause()
+
+
+def step_vuln(engine, stats):
+    term = input("Enter search term for vulnerabilities: ").strip()
+    print(f"→ SearchSploit for '{term}':")
+    print(engine.run_searchsploit(term))
+    stats[4] = "Done"
+    pause()
+
+
+def step_exploit(engine, stats):
+    module = input("Enter Metasploit module path: ").strip()
+    print(f"→ Running exploit {module}:")
     try:
-        out = engine.run_nmap(stype, ports)
-        print(out)
+        print(engine.run_exploit(module))
     except Exception as e:
-        print(f"Error: {e}")
-
-    statuses[2] = "Done"
+        print(f"✗ Exploitation error: {e}")
+    stats[5] = "Done"
     pause()
 
 
-def step_enum_services(engine, statuses):
-    print("Service enumeration is not yet implemented.")
-    statuses[3] = "Done"
+def step_webapp(engine, stats):
+    print("→ OWASP ZAP Baseline + Directory Bruteforce:")
+    print(engine.run_webapp_tests())
+    stats[6] = "Done"
     pause()
 
 
-def step_vuln_detect(engine, statuses):
-    print("Vulnerability detection is not yet implemented.")
-    statuses[4] = "Done"
+def step_bruteforce(engine, stats):
+    user = input("Enter SSH username: ").strip()
+    pwlist = input("Enter password list path: ").strip()
+    print(f"→ Running SSH brute-force as {user}:")
+    print(engine.run_bruteforce(user, pwlist))
+    stats[7] = "Done"
     pause()
 
 
-def step_exploitation(engine, statuses):
-    print("Exploitation is not yet implemented.")
-    statuses[5] = "Done"
+def step_postex(engine, stats):
+    print("→ Post-Exploitation Enumeration:")
+    print(engine.run_post_exploit())
+    stats[8] = "Done"
     pause()
 
 
-def step_reporting(engine, statuses):
-    fname = input("Report filename [report.txt]: ").strip() or "report.txt"
-    try:
-        engine.write_report(fname)
-        print(f"✓ Report saved to {fname}")
-    except Exception as e:
-        print(f"Error writing report: {e}")
-    statuses[6] = "Done"
+def step_privesc(engine, stats):
+    print("→ Privilege Escalation Checks (linPEAS):")
+    print(engine.run_priv_esc())
+    stats[9] = "Done"
     pause()
+
+
+def step_wireless(engine, stats):
+    print("→ Wireless & MITM Tests:")
+    print(engine.run_wireless())
+    stats[10] = "Done"
+    pause()
+
+
+def step_apicloud(engine, stats):
+    print("→ API / Cloud Fuzzing (ffuf):")
+    print(engine.run_api_cloud())
+    stats[11] = "Done"
+    pause()
+
+
+def step_remed(engine, stats):
+    print("→ Generating Remediation Guide:")
+    print(engine.run_remediation())
+    stats[12] = "Done"
+    pause()
+
+
+def step_report(engine, stats):
+    path = input(
+        "Enter report filename [report.txt]: ").strip() or "report.txt"
+    engine.write_report(path)
+    print(f"✓ Report saved to {path}")
+    stats[13] = "Done"
+    pause()
+
+
+ACTIONS = {
+    "1": step_target,    "2": step_info,    "3": step_scan,
+    "4": step_service,   "5": step_vuln,    "6": step_exploit,
+    "7": step_webapp,    "8": step_bruteforce, "9": step_postex,
+    "10": step_privesc,  "11": step_wireless, "12": step_apicloud,
+    "13": step_remed,    "14": step_report
+}
 
 
 def main():
     engine = Engine()
     statuses = ["Pending"] * len(STEPS)
-
-    actions = {
-        "1": step_target,
-        "2": step_info,
-        "3": step_scan,
-        "4": step_enum_services,
-        "5": step_vuln_detect,
-        "6": step_exploitation,
-        "7": step_reporting,
-    }
-
     while True:
         print_ui(statuses)
         choice = input("Select an option: ").strip()
         if choice == "0":
-            print("Bye!")
-            sys.exit(0)
-        action = actions.get(choice)
+            print("Goodbye!")
+            break
+        action = ACTIONS.get(choice)
         if action:
             action(engine, statuses)
         else:
-            print("Invalid option.")
+            print("Invalid choice.")
             pause()
 
 
